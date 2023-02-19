@@ -1,0 +1,283 @@
+
+
+- чистим свой проект api_yamdb
+=============================
+Корневая папка проекта
+├── api_yamdb/
+│    ├── api/ <-- Директория приложения api
+│    │   └── # Файлы приложения
+│    ├── api_yamdb/
+│    │   ├── __init__.py
+│    │   ├── settings.py
+│    │   ├── urls.py
+│    │   └── wsgi.py
+│    ├── reviews/ <-- Директория приложения reviews
+│    │   └── # Файлы приложения
+│    ├── static <-- Директория для сборки статических файлов проекта
+│    │   └── redoc.yaml
+│    ├── templates
+│    │   └── redoc.html
+│    └── manage.py
+├── tests/ <-- Эту директорию нужно удалить
+├── .gitignore
+├── pytest.ini <-- Этот файл нужно удалить
+├── README.md
+├── requirements.txt
+└── setup.cfg <-- Этот тоже удаляйте
+=============================
+
+
+- создаем файл Dockerfile в папке проекта (где расположен requirements.txt)
+=============================
+FROM python:3.7-slim
+
+RUN mkdir /app
+
+COPY requirements.txt /app
+
+RUN pip3 install -r /app/requirements.txt --no-cache-dir
+
+COPY api_yamdb/ /app
+
+WORKDIR /app
+
+CMD ["python3", "manage.py", "runserver", "0:8000"]
+=============================
+
+
+- собираем образ в терминале(предварительно переходим в папку проекта)
+docker build -t <назвать название_образа> . 
+
+- проверить наличие образа (необязательно)
+docker image ls
+
+- удалить образ (убрать лишний образ, если мешает)
+docker image rm <название_образа>
+
+- запуск контейнера
+docker run --name <имя_контейнера> -it -p 8000:8000 <название_образа>
+
+=============================
+УПРАВЛЕНИЕ КОНТЕЙНЕРОМ
+- показ запущенных контейнеров
+docker container ls
+- показ всех контейнеров
+docker container ls -a
+-остановка контейнера
+docker container stop <название_контейнера>
+- запуск контейнера
+docker container start <название_контейнера>
+-удалить контейнер
+docker container rm <название_контейнера> 
+=============================
+
+- запуск терминала в контейнере
+docker exec -it <название_контейнера> bash
+
+- выход из терминала контейнера
+exit
+
+-удалить контейнер (после остановки контейнера)
+docker container rm <название_контейнера>
+
+- проверяем requirements.txt (должен содержать необходимый минимум,важно наличие самих пакетов, а не версии)
+=============================
+asgiref==3.2.10
+Django==2.2.16
+django-filter==2.4.0
+djangorestframework==3.12.4
+djangorestframework-simplejwt==4.8.0
+gunicorn==20.0.4
+psycopg2-binary==2.8.6
+PyJWT==2.1.0
+pytz==2020.1
+sqlparse==0.3.1
+=============================
+
+- создаем файл переменных окружения .env(где, расположен requirements.txt)
+=============================
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+DB_HOST=db
+DB_PORT=5432
+=============================
+
+- изменяем settings
+=============================
+DATABASES = {
+    'default': {
+        'ENGINE': os.getenv('DB_ENGINE'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT')
+    }
+}
+=============================
+
+- меняем Dockerfile
+=============================
+FROM python:3.7-slim
+
+RUN mkdir /app
+
+COPY requirements.txt /app
+
+RUN pip3 install -r /app/requirements.txt --no-cache-dir
+
+COPY api_yamdb/ /app
+
+WORKDIR /app
+
+CMD ["gunicorn", "api_yamdb.wsgi:application", "--bind", "0:8000" ]
+=============================
+
+
+- добавить файл docker-compose.yaml(где, расположен requirements.txt)
+=============================
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13.0-alpine
+    volumes:
+      - /var/lib/postgresql/data/
+    env_file:
+      - ./.env
+  web:
+    build: .
+    restart: always
+    ports:
+     - "8000:8000" 
+    depends_on:
+      - db
+    env_file:
+      - ./.env
+=============================
+
+
+
+пример структуры на данный момент
+=============================
+Корневая папка проекта
+├── api_yamdb/
+│    ├── api/ <-- Директория приложения api
+│    │   └── # Файлы приложения
+│    ├── api_yamdb/
+│    │   ├── __init__.py
+│    │   ├── settings.py
+│    │   ├── urls.py
+│    │   └── wsgi.py
+│    ├── reviews/ <-- Директория приложения reviews
+│    │   └── # Файлы приложения
+│    ├── static <-- Директория для сборки статических файлов проекта
+│    │   └── redoc.yaml
+│    ├── templates
+│    │   └── redoc.html
+│    └── manage.py
+├── .env <-- Файл переменных окружения
+├── .gitignore
+├── docker-compose.yaml <-- Новый docker-compose файл
+├── Dockerfile 
+├── README.md
+└── requirements.txt
+=============================
+
+
+- запуск и создание контейнеров (если нужно остановить, то жмем ctrl + C)
+docker-compose up
+
+
+- создаем папку nginx в корне проекта, а в ней файл default.conf
+=============================
+server {
+    listen 80;
+	# в будущем здесь указываем ip сервера
+    server_name 127.0.0.1;
+
+    location /static/ {
+        root /var/html/;
+    }
+
+    location /media/ {
+        root /var/html/;
+    }
+
+    location / {
+        proxy_pass http://web:8000;
+    }
+}
+=============================
+
+- изменяем settings
+=============================
+
+STATIC_URL = '/static/'
+# STATICFILES_DIRS необходимо закомментировать или удалить
+# STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static/'),)
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+=============================
+
+- изменяем docker-compose.yaml
+=============================
+
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13.0-alpine
+    volumes:
+      - /var/lib/postgresql/data/
+    env_file:
+      - ./.env
+  web:
+    build: .
+    restart: always
+    volumes:
+      - static_value:/app/static/
+      - media_value:/app/media/
+    depends_on:
+      - db
+    env_file:
+      - ./.env
+
+  nginx:
+    image: nginx:1.21.3-alpine
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+      - static_value:/var/html/static/
+
+      - media_value:/var/html/media/
+
+    depends_on:
+      - web
+
+volumes:
+  static_value:
+  media_value:
+=============================
+
+
+- пересобираем контейнеры 
+docker-compose up -d --build
+
+- выполнить команды по очереди (миграция, создание суперюзера, сбор статики)
+docker-compose exec web python manage.py migrate
+docker-compose exec web python manage.py createsuperuser
+docker-compose exec web python manage.py collectstatic --no-input
+
+- можете проверить сайт
+
+- остановка собранных контейнеров и удаление
+docker-compose down -v

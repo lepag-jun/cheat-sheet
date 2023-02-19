@@ -1,0 +1,219 @@
+- форкнуть проект https://github.com/Turonk/infra_actions
+
+- клонировать свой проект infra_actions
+
+- создать и активировать окружение, установить зависимости
+
+- проверить запустив сервер джанго
+http://127.0.0.1:8000/
+
+- создать директорию .github/workflows, а в ней файл —  main.yml
+========================
+└── infra_actions
+     ├── .git/ 
+     ├── .github/
+     |   ├── workflows/ <-- Директория workflow
+     |          └── main.yml <-- Файл с инструкциями
+     ├── .vscode/ 
+     ├── infra_project  
+     |   ├── manage.py
+     |   ├── infra_app/ 
+     |      └── infra_project
+     |       ├── __init__.py
+     |       ├── settings.py
+     |       ├── urls.py
+     |       └── wsgi.py
+     ├── venv/ 
+     ├── Dockerfile
+     ├── README.md  
+     └── .gitignore
+========================
+
+========================
+# .github/workflows/**main.yml**
+name: Django-app workflow
+
+on: [push]
+
+jobs:
+  tests:
+    # «Раннер» — создание изолированного окружения с последней версией Ubuntu 
+    runs-on: ubuntu-latest
+
+    steps:
+    # Запуск actions checkout — готового скрипта 
+    # для клонирования репозитория
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      # Запуск actions setup-python — готового скрипта 
+      # для развёртывания окружения Python
+      uses: actions/setup-python@v2
+      with:
+        # Выбор версии Python
+        python-version: 3.7
+
+    - name: Install dependencies
+      run: | 
+        # обновление pip
+        python -m pip install --upgrade pip 
+        # установка flake8 и его плагинов
+        pip install flake8 pep8-naming flake8-broken-line flake8-return flake8-isort
+        # установка зависимостей
+        pip install -r requirements.txt 
+
+    - name: Test with flake8 and django tests
+      run: |
+        # запуск проверки проекта по flake8
+        python -m flake8
+========================
+
+- в корне проекта создать setup.cfg
+========================
+[flake8]
+ignore =
+    W503,
+    F811
+exclude =
+    tests/,
+    */migrations/,
+    venv/,
+    env/
+per-file-ignores =
+    */settings.py:E501
+max-complexity = 10
+========================
+
+- поставить flake8
+(venv) pip install flake8 pep8-naming flake8-broken-line flake8-return flake8-isort
+
+- проверить (при наличии ошибок поправить проект)
+(venv) flake8 .
+
+- запушить проект
+git add .
+git add ../setup.cfg
+git add ../.github/                        
+git commit -m 'add test with flake8'
+git push
+
+- проверить в гитхабе, что загрузились все файлы
+
+- зайти в actions в гитхабе и видим зеленую галкочку (на последнем коммите)
+github.com/<ваш_логин>/infra_actions/actions
+
+
+- дописать main.yml
+========================
+....
+	- name: Test with flake8 and django tests
+      run: |
+        # запуск проверки проекта по flake8
+        python -m flake8
+        # перейти в папку, содержащую manage.py — 
+        #<корневая_папка_infra_actions>/<папка_проекта>/manage.py
+        cd infra_project/
+        # запустить написанные разработчиком тесты
+        python manage.py test
+========================
+
+- запушили и видим в actions ошибку, смотрим и исправляем в проекте, снова пушим
+
+
+- собираем образ, запускаем и проверяем, не забываем перейти в папку с докерфайлом
+docker build -t <ваш_логин_докерхаб>/<название_образа_придумать>:v1 .
+docker image ls 
+docker run -p 5000:5000 <IMAGE ID> 
+
+- отправляем в докерхаб созданный образ
+docker login -u <ваш_логин_докерхаб>
+docker push <ваш_логин_докерхаб>/<название_образа_придумать>:v1
+
+
+- добавить в конец файла main.yml(следить за отступом)
+========================
+build_and_push_to_docker_hub:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - name: Check out the repo
+        # Проверка доступности репозитория Docker Hub для workflow
+        uses: actions/checkout@v2 
+      - name: Set up Docker Buildx
+        # Вызов сборщика контейнеров docker
+        uses: docker/setup-buildx-action@v1 
+      - name: Login to Docker 
+        # Запуск скрипта авторизации на Docker Hub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }} 
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Push to Docker Hub
+        # Пуш образа в Docker Hub 
+        uses: docker/build-push-action@v2 
+        with:
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/ваш-репозиторий-на-docker-hub:latest
+========================
+
+- перейти в гитхабе в своем проекте в setings -> secrets and variables -> actions 
+нажать New repository secret и создать несколько ключей
+DOCKER_USERNAME    <-- логин докерхаба
+DOCKER_PASSWORD    <-- пароль докерхаба
+SSH_KEY            <-- ssh-ключ, который имеет доступ к серверу (можете использовать команду, он сразу окажется в буфере обмена, clip < ~/.ssh/id_rsa)
+USER			   <-- логин сервера
+HOST			   <-- ip сервера
+PASSPHRASE		   <-- пароль для ssh-ключа  
+TELEGRAM_TO        <-- Узнать свой ID можно у бота @userinfobot
+TELEGRAM_TOKEN     <-- Получить этот токен можно у бота @BotFather
+
+- запустить яндекс обклако
+- поставить в сервер докер
+sudo apt-get update
+sudo apt install docker.io
+
+
+
+- добавить в main.yml
+========================
+deploy:
+    runs-on: ubuntu-latest
+    needs: build_and_push_to_docker_hub
+    steps:
+    - name: executing remote ssh commands to deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.PASSPHRASE }} # Если ваш ssh-ключ защищён фразой-паролем
+        script: |
+          # Выполняет pull образа с DockerHub
+          sudo docker pull <имя-пользователя>/<имя-репозитория>
+          #остановка всех контейнеров
+          sudo docker stop $(sudo docker ps -a -q)
+          sudo docker run --rm -d -p 5000:5000 <имя-пользователя>/<имя-репозитория>
+========================
+
+
+- проверить сайт(исправить проект по необходимости, после пуша на сервере должен обновиться автоматом)
+<ip_сервера>:5000 
+
+
+- добавить в main.yml
+========================
+send_message:
+  runs-on: ubuntu-latest
+  needs: deploy
+  steps:
+  - name: send message
+    uses: appleboy/telegram-action@master
+    with:
+      to: ${{ secrets.TELEGRAM_TO }}
+      token: ${{ secrets.TELEGRAM_TOKEN }}
+      message: ${{ github.workflow }} успешно выполнен!
+========================
+
+
+- послу пуша, сайт должен открываться и прислать сообщение в телеграмму
+

@@ -1,0 +1,347 @@
+ВМ с образом Ubuntu 20.04
+
+- подключение к ВМ
+ssh ваш_логин@ip_сервера
+
+=============================================
+когда в первый раз заходите, отвечайте на:
+Are you sure you want to continue connecting (yes/no/[fingerprint])?    
+yes
+
+Enter passphrase for key '...ssh/id_rsa':
+ваш пароль ключа
+=============================================
+
+- создание ключа в ВМ
+ssh-keygen
+
+- показ ключа в ВМ
+cat ~/.ssh/id_rsa.pub
+
+
+- обновление индекса пакетов
+sudo apt update 
+
+- обновление пакетов в системе
+sudo apt upgrade -y
+
+- установка нужных пакетов (pip, venv, git)
+sudo apt install python3-pip python3-venv git -y
+
+- клонирование проекта с гита
+git clone ваш_проект
+
+- переход в папку проекта
+cd hw05_final
+(дальше все команды написаны с учетом нахождения в папке проекта, т.е. никуда не двигался по папке)
+
+- установка вирт. окружение
+python3 -m venv venv
+
+- активация вирт.окружение
+. venv/bin/activate
+
+- установка зависимостей
+pip install -r requirements.txt
+
+- настройка settings.py (добавить ip)(не забываем про Debug = False)
+nano yatube/yatube/settings.py
+
+- запуск сервера (проверили что работает сайт)(если необходимо, то доустанавливайте необходимые зависимости)
+python3 yatube/manage.py runserver 0:8000 --insecure
+
+- копирование БД с локального компа на сервер
+scp файл_на_локальном_компе ваш_логин@ip_сервера:/home/ваш_логин/hw05_final/yatube
+
+- установка gunicorn
+pip install gunicorn
+
+- запус gunicorn (предарительно перейти в папку с manage.py)(проверили, что сайт работает без статики)
+gunicorn --bind 0.0.0.0:8000 yatube.wsgi
+
+- настройка gunicorn (пример файла ниже)(одновременно создается файл, если отсутствует)
+sudo nano /etc/systemd/system/gunicorn.service 
+
+=============================================
+[Unit]
+Description=gunicorn daemon 
+
+After=network.target 
+
+[Service]
+User=логин 
+
+WorkingDirectory=/home/ваш_логин/hw05_final/yatube/ 
+
+ExecStart=/home/ваш_логин/hw05_final/venv/bin/gunicorn --bind 127.0.0.1:8000 yatube.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+=============================================
+
+
+- запуск юнита gunicorn
+sudo systemctl start gunicorn
+
+
+=============================================
+УПРАВЛЕНИЕ СЕРВИСАМИ
+
+- проверка запущенных юнитов
+sudo systemctl
+
+- запуск юнит
+sudo systemctl start юнит
+
+- остановка юнита
+sudo systemctl stop юнит
+
+- перезапуск юнита
+sudo systemctl restart юнит
+=============================================
+
+
+- добавление юнита в список автозапуска системы
+sudo systemctl enable gunicorn
+
+- проверка статуса gunicorn (проверили, что активен gunicorn)
+sudo systemctl status gunicorn 
+
+- установка nginx
+sudo apt install nginx -y 
+
+- настройка фаервола (чтобы запросы сайта проходило и ssh, иначе не сможете потом зайти по ssh)
+sudo ufw allow 'Nginx Full'
+sudo ufw allow OpenSSH
+
+- включение фаервола
+sudo ufw enable
+
+- статус фаервола
+sudo ufw status
+
+- запуск nginx
+sudo systemctl start nginx
+
+- настройка settings (добавить строчку)(пример ниже)
+nano yatube/yatube/settings.py
+ 
+=============================================
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+
+эту строку убрать или закомментить STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+=============================================
+
+- сбор статики
+python3 yatube/manage.py collectstatic
+
+- Перезапустить все службы
+sudo systemctl daemon-reload 
+- Запустить демона gunicorn после перезапуска
+sudo systemctl restart gunicorn
+- Убедиться что gunicorn активен
+sudo systemctl status gunicorn 
+
+
+- настройка nginx
+sudo nano /etc/nginx/sites-enabled/default
+
+=============================================
+server {
+    listen 80;
+    server_name ip_сервера;
+
+    location /static/ {
+        root /home/ваш_логин/hw05_final/yatube;
+    }
+
+    location /media/ {
+        root /home/ваш_логин/hw05_final/yatube;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://127.0.0.1:8000;
+    }
+} 
+=============================================
+
+- проверка настройки nginx (должно быть ok и succesful)
+sudo nginx -t
+
+- перезагрузка nginx
+sudo systemctl reload nginx
+
+
+
+- после получения домена внести изменение в settings(пример ниже)
+nano yatube/yatube/settings.py
+
+=============================================
+ALLOWED_HOSTS = ['ip_сервера', 'localhost', 'ваш_домен']
+=============================================
+
+
+- перезагрузка gunicorn
+sudo systemctl restart gunicorn
+
+- настройка nginx (изменить строку server_name)
+sudo nano /etc/nginx/sites-enabled/default
+
+=============================================
+server {
+...
+    server_name ip_сервера ваш_домен;
+...
+} 
+=============================================
+
+- перезагрузка nginx
+sudo systemctl reload nginx
+
+
+- установка certbot (плюс необходимые пакеты)
+sudo apt install snapd
+sudo snap install core; sudo snap refresh core
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+
+- запуск получения сертификата
+sudo certbot --nginx
+
+=============================================
+В процессе оформления сертификата вам нужно будет указать свою электронную почту и ответить на несколько вопросов.
+“Enter email address” (англ. «введите почту»). Почта нужна для предупреждений, что сертификат пора обновить.
+“Please read the Terms of Service...” (англ. «прочитайте правила сервиса»). Прочитайте правила по ссылке, введите y и нажмите Enter.
+“Would you be willing to share your email address with the Electronic Frontier Foundation?” (англ. «хотите ли вы поделиться своей почтой с Фондом электронных рубежей»). Отметьте на своё усмотрение y (да) или n (нет) и нажмите Enter.
+“Please enter the domain name(s) you would like on your certificate” (англ. «пожалуйста, введите доменные имена, которые вы хотели бы видеть в своем сертификате»). Введите добавленное в проект доменное имя, нажмите Enter.
+=============================================
+
+- перезагрузка nginx
+sudo systemctl reload nginx
+
+- проверка обновления сертификата
+sudo certbot renew --dry-run
+
+- принудительное обновление сертификата и перезапуск nginx (необязательно делать)
+sudo certbot renew --pre-hook "service nginx stop" --post-hook "service nginx start" 
+
+
+- запуск конфигурации локали (поставить ru_RU.UTF-8)
+sudo dpkg-reconfigure locales 
+
+- перезагрузка системы (после перезагрузки заходим по ssh и заходим в папку проекта, незабыв запустить вирт. окружение)
+sudo reboot
+
+- проверить наличие локали ru_RU.UTF-8
+locale
+
+- установка PostgreSQL
+sudo apt install postgresql postgresql-contrib -y 
+
+- управление postgresql
+sudo systemctl stop postgresql # Остановить 
+sudo systemctl start postgresql # Запустить
+sudo systemctl restart postgresql # Перезапустить
+sudo systemctl status postgresql # Узнать статус, текущее состояние 
+
+- проверка установки postgresql
+sudo -u postgres psql -c 'select now()' 
+
+- запуск терминала СУБД
+sudo -u postgres psql 
+
+- создание БД в термиле
+CREATE DATABASE название_БД;
+
+- создание юзера
+CREATE USER юзер WITH ENCRYPTED PASSWORD 'пароль';
+
+- предоставление прав доступа юзеру
+GRANT ALL PRIVILEGES ON DATABASE название_БД TO юзер;
+
+- выход из терминала БД
+\q
+
+- установка драйвер для работы с postgres
+pip install psycopg2-binary==2.8.6 
+
+- установка пакета dotenv
+pip install python-dotenv 
+
+- настройка settings
+nano yatube/yatube/settings.py
+
+=============================================
+from dotenv import load_dotenv
+
+load_dotenv()
+
+...
+
+DATABASES = {
+    'default': {
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT')
+    }
+} 
+=============================================
+
+- создать файл .env
+nano yatube/yatube/.env
+
+=============================================
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=название_БД
+POSTGRES_USER=юзер
+POSTGRES_PASSWORD=пароль
+DB_HOST=127.0.0.1
+DB_PORT=5432 
+=============================================
+
+
+- миграция
+python3 yatube/manage.py migrate
+
+
+- создание дампа базы (делать на локальном компе в папке с manage.py)
+python manage.py dumpdata > dump.json
+
+- отправка файла с локального компа на сервер
+scp dump.json ваш_логин@ip_сервера:/home/ваш_логин/hw05_final/yatube
+
+- открыть консоль питона на сервере
+python3 yatube/manage.py shell  
+
+# выполнить в открывшемся терминале:
+>>> from django.contrib.contenttypes.models import ContentType
+>>> ContentType.objects.all().delete()
+>>> quit()
+
+- загрузка дампа в БД(перейдя в папку с manage.py)
+python3 manage.py loaddata dump.json
+
+- перезагрузка gunicorn
+sudo systemctl restart gunicorn
+
+- создание бекапа БД
+sudo -u postgres pg_dump yatube > yatube_backup.dump 
+
+- команды загрузки бекапа
+sudo -u postgres psql -c 'create database yatube2;' # Создали пустую базу данных с именем yatube2
+sudo -u postgres psql -d yatube2 -f yatube_backup.dump # Загрузили в неё данные из дампа
+
+
+
+
+=============================================
+полезные команды
+=============================================
+
+- узнать версию пакета
+apt <имя_пакета> --version

@@ -1,0 +1,1971 @@
+=======================
+Полезные команды в терминале
+=======================
+- показ местоположения
+pwd
+
+- показ содержимое в папке
+ls
+
+- Показать файлы, в том числе скрытые файлы (-a) с подробной информацией (-l), и отсортировать всё
+по времени изменения (-t)
+ls -alt
+
+- перейти к папке
+cd <путь_до_папки>
+
+- создать папку
+mkdir <название_папки>
+
+- создать файл
+touch <файл>
+
+- редактировать файл
+nano <файл>
+
+- удалить файл
+rm <файл>
+
+- удалить папку
+rmdir -r <название_папки>
+=======================
+
+
+=======================
+Работа с виртуальным окружением
+=======================
+- создание виртуального окружения для проекта(предварительно перейдите в папку проекта)
+python -m venv venv
+----
+для Linux и macOS используем команду
+python3 -m venv venv
+----
+
+- активация виртуального окружения
+source venv/Scripts/activate
+или 
+. venv/Scripts/activate
+----
+для Linux и macOS 
+source venv/bin/activate
+----
+
+- отключение виртуального окружения
+deactivate
+
+- обновление менеджера пакета(необязательно делать)
+python -m pip install --upgrade pip
+
+- показать список установленных пакетов
+pip list
+
+- сохранить список установленных пакетов в файл requirements.txt 
+pip freeze > requirements.txt
+
+- установка зависимостей из requirements.txt
+pip install -r requirements.txt
+=======================
+
+
+=======================
+Работа с GIT
+=======================
+
+- создать ключ
+ssh-keygen
+
+- показать ключ
+cat .ssh/id_rsa.pub 
+
+- базовые настройки (имя и имейл)
+git config --global user.name "<имя>"
+git config --global user.email "<имейл>"
+
+- клонирование репозитория
+git clone <ссылка_из_гитхаба>
+
+- проверить состояние репозитория
+git status
+
+- добавить изменения в индекс
+git add .
+
+- перевести файл в состояние "неотслеживаемый"
+git rm --cached <файл> 
+
+- фиксирование изменения
+git commit -m 'комментарии'
+
+- изменение сделанного коммита
+git commit --amend -m 'комментарий'
+
+- отправка изменения в гитхаб
+git push
+
+- просмотр истории коммитов
+git log
+
+- просмотр изменения последнего коммита
+git show
+
+- откат изменений до предыдущего коммита
+git reset HEAD
+=======================
+
+
+
+
+
+
+
+
+=======================
+	НАЧАЛО DJANGO!
+=======================
+!!! Собирается для Python 3.9 !!! 
+(можно просто поставить еще питон и при создании вирт.окрежуния указываем явно версию питона  
+python -3.9 -m venv venv  для Windows
+python3.9 -m venv venv  для Linux )
+
+ПРОЕКТ НА ПРИМЕРЕ ЯТУБА (без оптимизации и кеша)
+
+https://code.s3.yandex.net/html-templates04-22.zip
+
+
+Итак, перешли в папку проекта
+cd <папка_проекта>
+
+- создание вирт. окружения
+python -m venv venv
+
+- активация
+source venv/Scripts/activate
+
+ВНИМАНИЕ! дальше, если видите (venv) рядом с командой, это значит окружение должно быть включено
+
+- обновление менеджера пакета
+(venv) python -m pip install --upgrade pip
+
+- установка django
+(venv) pip install Django==2.2.19
+
+- создание базовой структуры проекта джанго
+(venv) django-admin startproject yatube
+
+=======================
+ПРИМЕР СТРУКТУРЫ
+=======================
+корневая папка проекта
+├── .git/  
+├── .vscode/   
+├── yatube  <-- рабочая папка проекта с кодом
+|   ├── manage.py
+|   └── yatube  <-- папка с настройками проекта
+|       ├── __init__.py
+|       ├── settings.py
+|       ├── urls.py
+|       └── wsgi.py
+├── venv
+├── README.md
+├── LICENSE
+└── .gitignore
+=======================
+
+- запуск сервера для проверки(предварительно перейти в папку где manage.py)
+(venv) python manage.py runserver
+
+- сохранить список зависимости
+(venv) pip freeze > requirements.txt
+
+- не забываем пушить в гитхаб
+- также проверяем гитигнор, чтобы лишние файлы и папки не отправлялось
+
+- создание приложения проекта
+(venv) python manage.py startapp posts
+
+- регистрируем приложение в settings.py
+=======================
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'posts.apps.PostsConfig,  # Добавленная запись
+]
+=======================
+
+- добавить в головном urls.py
+=======================
+# yatube/urls.py
+from django.contrib import admin
+from django.urls import include, path
+
+urlpatterns = [
+    # импорт правил из приложения posts
+    path('', include('posts.urls', namespace='posts')),
+    path('admin/', admin.site.urls),
+]
+=======================
+
+- создать urls в приложении posts
+=======================
+# posts/urls.py
+from django.urls import path
+
+from . import views
+
+app_name = 'posts'
+
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('group/<slug:slug>/', views.group_posts, name='group_lists'),
+]
+=======================
+
+- добавить views функции
+=======================
+# posts/views.py
+from django.http import HttpResponse
+
+
+# Главная страница
+def index(request):
+    return HttpResponse('Главная страница')
+
+# Страница группы
+def group_posts(request, slug):
+    return HttpResponse(f'Страница группы {slug}')
+=======================
+
+- запуск сервера разработчика (проверить работу страницы - главная и group/1)
+(venv) python manage.py runserver
+
+- можете запушить проект
+
+
+- измениение директории шаблона в settings.py
+=======================
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],                   <---- изменено
+        'APP_DIRS': True, 
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ]
+        },
+    }
+]
+=======================
+
+- создаем папку templates и файл index.html
+=======================
+yatube
+├── yatube/     #  Главная папка проекта
+├── posts/  #  Папка приложения
+├── templates  <-- Директория для шаблонов
+│    └── posts
+│        └── index.html            # Шаблон главной страницы
+└──  manage.py 
+=======================
+
+=======================
+<!-- templates/posts/index.html -->
+<!DOCTYPE html> 
+<html lang="ru">
+  <head>
+  </head>
+  <body>
+    <h1>Главная страница</h1>
+  </body>
+</html>
+=======================
+
+- изменение views
+=======================
+from django.shortcuts import render
+
+
+def index(request):
+    template = 'posts/index.html'
+
+    return render(request, template)
+	
+def group_posts(request, slug):
+    template = 'posts/group_list.html'
+
+    return render(request, template) 
+=======================
+
+- подготовить папки и файлы
+=======================
+yatube
+├── yatube/     
+├── posts/  
+├── templates   
+│    ├── posts        
+│    │   ├── group_list.html      
+│    │   └── index.html           
+│    ├── includes          <-- Директория с подключаемыми шаблонами
+│    │   ├── header.html   <-- пока пустой
+│    │   └── footer.html   <-- пока пустой
+│    └──  base.html          
+└──  manage.py
+=======================
+
+
+=======================
+<!-- templates/base.html -->
+{% {% include 'includes/header.html' %}%}
+
+{% block content %}
+  Контент не подвезли :(
+{% endblock %}
+
+{% include 'includes/footer.html '%} 
+=======================
+
+=======================
+<!-- templates/posts/group_list.html -->
+{% extends 'base.html' %}
+{% block content %}
+  Список постов группы
+{% endblock %} 
+=======================
+
+=======================
+<!-- templates/posts/index.html -->
+{% extends 'base.html' %}
+{% block content %}
+  Главная страница
+{% endblock %} 
+=======================
+
+
+- готовим папку статик (взять из архива)
+=======================
+yatube
+├── yatube     # Главная папка проекта
+├── posts  # Папка приложения
+├── templates  # Папка шаблонов
+├── static     <-- Директория для статических файлов всего проекта
+│   ├── img <-- Директория для изображений
+│   │   ├── fav
+│   │   └── logo.png
+│   └── css <-- Директория для файлов таблиц стилей
+│       └── bootstrap.min.css
+└── manage.py 
+=======================
+
+- добавить в settings.py
+=======================
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] 
+=======================
+
+- правим header.html, footer.html и base.html
+=======================
+<!-- templates/includes/header.html -->
+{% load static %}
+
+<nav class="navbar navbar-light" style="background-color: lightskyblue">
+  <div class="container">
+      <a class="navbar-brand" href="{% url 'posts:index' %}">
+          <img src="{% static 'img/logo.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
+          <span style="color:red">Ya</span>tube
+      </a>
+  </div>
+</nav>
+=======================
+
+
+=======================
+<!-- templates/includes/footer.html -->
+<footer class="border-top text-center py-3">
+  <p>© {{ year  }} Copyright <span style="color:red">Ya</span>tube</p>    
+</footer>
+=======================
+
+
+=======================
+<!-- templates/base.html -->
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ru">
+  <head>    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="{% static 'img/fav/fav.ico' %}" type="image">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/fav/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/fav/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/fav/favicon-16x16.png' %}">
+    <meta name="msapplication-TileColor" content="#000">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+    <title>
+      {% block title %}
+        Социальная сеть для друзей
+      {% endblock %}
+    </title>
+  </head>
+
+  {% include 'includes/header.html' %}
+
+  {% block content %}
+    Контент не подвезли :(
+  {% endblock %}
+
+  {% include 'includes/footer.html '%} 
+</html>
+=======================
+
+
+- добавить в models.py
+=======================
+# posts/models.py
+from django.db import models
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class Post(models.Model):
+    text = models.TextField()
+    pub_date = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='posts'
+    )
+=======================
+
+- запустить команды
+(venv) python manage.py makemigrations
+(venv) python manage.py migrate
+(venv) python manage.py createsuperuser
+(venv) $ python manage.py runserver
+
+- проверить админку сайта http://127.0.0.1:8000/admin/ 
+
+- добавить в admin.py
+=======================
+# posts/admin.py
+from django.contrib import admin
+
+from .models import Post
+
+
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'text', 'pub_date', 'author')
+    search_fields = ('text',)
+    list_filter = ('pub_date',)
+    empty_value_display = '-пусто-'
+
+
+admin.site.register(Post, PostAdmin)
+=======================
+
+- скачать тестовую БД, заменить свою БД, создать нового суперпользователя, проверить в админке
+https://code.s3.yandex.net/backend-developer/conspects/db.sqlite3
+
+
+- изменить в views.py для index
+=======================
+# posts/views.py
+from django.shortcuts import render
+from .models import Post
+
+def index(request):
+    posts = Post.objects.order_by('-pub_date')[:10]
+    context = {
+        'posts': posts,
+    }
+
+    return render(request, 'posts/index.html', context)
+
+....
+=======================
+
+- добавляем в index.html и group_lists.html
+=======================
+....
+{% block content %}
+  <div class="container py-5">
+    <h1>Последние обновления на сайте</h1>          <----  для index
+	<h1>Записи сообщества {{ group.title }}</h1>    <----  для group_lists
+    {% for post in posts %}
+      <article>
+        <ul>
+          <li>
+            Автор: {{ post.author.get_full_name }}
+          </li>
+          <li>
+            Дата публикации: {{ post.pub_date|date:"d E Y" }}
+          </li>
+        </ul>
+        <p>{{ post.text }}</p>    
+        {% if post.group %}     
+          <a href="{% url 'posts:group_lists' post.group.slug %}">все записи группы</a>
+        {% endif %} 
+        {% if not forloop.last %}<hr>{% endif %}
+      </article>
+    {% endfor %}
+  </div> 
+{% endblock %}
+=======================
+
+- изменить в модели
+=======================
+from django.db import models
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class Group(models.Model):
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.title
+
+
+class Post(models.Model):
+    text = models.TextField()
+    pub_date = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='posts'
+    )
+	group = models.ForeignKey(
+        Group,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True
+    )
+=======================
+
+- изменить админ
+=======================
+class PostAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'text',
+        'pub_date',
+        'author',
+        'group',
+    )
+    list_editable = ('group',)
+    search_fields = ('text',)
+    list_filter = ('pub_date',)
+    empty_value_display = '-пусто-' 
+=======================
+
+- изменить views
+=======================
+from django.shortcuts import render, get_object_or_404
+
+from .models import Post, Group
+
+
+def index(request):
+    posts = Post.objects.order_by('-pub_date')[:10]
+    context = {
+        'posts': posts,
+    }
+
+    return render(request, 'posts/index.html', context)
+
+
+def group_posts(request, slug):
+    group = get_object_or_404(Group, slug=slug)
+    posts = Post.objects.filter(group=group).order_by('-pub_date')[:10]
+    context = {
+        'group': group,
+        'posts': posts,
+    }
+
+    return render(request, 'posts/group_list.html', context)
+=======================
+
+- сделать миграцию
+(venv) python manage.py makemigrations
+(venv) python manage.py migrate
+
+- запусить сервер, создать группы в админке и присвоить некоторым постам группы,
+а также сравнить дизайн своего сайта с исходником в архиве :)
+
+- по желанию запушить в гит
+
+
+- добавить в головной урлс
+=======================
+# yatube/urls.py
+....
+urlpatterns = [
+	....
+	path('auth/', include('users.urls')),
+	path('auth/', include('django.contrib.auth.urls')),
+]
+....
+=======================
+
+- создать приложение users
+(venv) python manage.py startapp users
+
+
+- создать файл urls.py в приложении users
+=======================
+# users/urls.py
+from django.contrib.auth.views import LogoutView
+from django.urls import path
+
+app_name = 'users'
+
+urlpatterns = [
+    path(
+      'logout/',
+      LogoutView.as_view(template_name='users/logged_out.html'),
+      name='logout'
+    ),
+]
+=======================
+
+
+- добавить в сеттингс
+=======================
+.....
+INSTALLED_APPS = [
+	.....
+	'users.apps.UsersConfig',
+]
+.....
+=======================
+
+
+- создать шаблон
+=======================
+# templates/users/logged_out.html
+{% extends 'base.html' %}
+
+{% block title %}Вы вышли из системы{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 p-5">
+    <div class="card">
+      <div class="card-header">
+        Выход
+      </div>
+      <div class="card-body">
+        <p>
+          Вы вышли из своей учётной записи. Ждём вас снова!
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+=======================
+
+- проверили http://127.0.0.1:8000/auth/logout/ на схожесть внешнего вида сайта
+
+- создать форму в приложении юзерс
+=======================
+# users/forms.py
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import get_user_model
+
+
+User = get_user_model()
+
+
+class CreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ('first_name', 'last_name', 'username', 'email')
+=======================
+
+
+- внести в views приложении юзерс
+=======================
+# users/views.py
+from django.views.generic import CreateView
+from django.urls import reverse_lazy
+
+from .forms import CreationForm
+
+
+class SignUp(CreateView):
+    form_class = CreationForm
+    success_url = reverse_lazy('posts:index')
+    template_name = 'users/signup.html'
+=======================
+
+
+- изменить в урлс приложении юзерс
+=======================
+# users/urls.py
+from django.contrib.auth.views import (LoginView,
+                                       LogoutView,
+                                       PasswordChangeDoneView,
+                                       PasswordChangeView,
+                                       PasswordResetCompleteView,
+                                       PasswordResetConfirmView,
+                                       PasswordResetDoneView,
+                                       PasswordResetView)
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path(
+        'logout/',
+        LogoutView.as_view(
+            template_name='users/logged_out.html'
+        ),
+        name='logout',
+    ),
+    path(
+        'signup/',
+        views.SignUp.as_view(),
+        name='signup'
+    ),
+    path(
+        'login/',
+        LoginView.as_view(
+            template_name='users/login.html'
+        ),
+        name='login',
+    ),
+    path(
+        'password_change/',
+        PasswordChangeView.as_view(
+            template_name='users/password_change_form.html'
+        ),
+        name='password_change',
+    ),
+    path(
+        'password_change/done/',
+        PasswordChangeDoneView.as_view(
+            template_name='users/password_change_done.html'
+        ),
+        name='password_change_done',
+    ),
+    path(
+        'password_reset/',
+        PasswordResetView.as_view(
+            template_name='users/password_reset_form.html',
+        ),
+        name='password_reset',
+    ),
+    path(
+        'password_reset/done/',
+        PasswordResetDoneView.as_view(
+            template_name='users/password_reset_done.html'
+        ),
+        name='password_reset_done',
+    ),
+    path(
+        'reset/<uidb64>/<token>/',
+        PasswordResetConfirmView.as_view(
+            template_name='users/password_reset_confirm.html'
+        ),
+        name='password_reset_confirm',
+    ),
+    path(
+        'reset/done/',
+        PasswordResetCompleteView.as_view(
+            template_name='users/password_reset_complete.html'
+        ),
+        name='password_reset_complete',
+    ),
+]
+=======================
+
+
+- добавить шаблоны в templates/users/, брать из архива
+(на основе шаблона собрать остальные шаблоны)
+=======================
+{% extends "base.html" %}
+
+{% block title %}{% endblock %}
+
+{% block content %}
+
+{% endblock %}
+=======================
+
+=======================
+templates
+└──	users
+	├──	logged_out.html
+	├──	login.html
+	├──	password_change_done.html
+	├──	password_change_form.html
+	├──	password_reset_complete.html
+	├──	password_reset_confirm.html
+	├──	password_reset_done.html
+	├──	password_reset_form.html
+	└──	signup.html 
+=======================
+
+
+- добавить в сеттингс
+=======================
+.....
+LOGIN_URL = 'users:login'
+LOGIN_REDIRECT_URL = 'posts:index'
+# LOGOUT_REDIRECT_URL = 'posts:index'   <---- по желанию раскомментировать, отвечает за редирет после выхода из логина
+
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
+=======================
+
+
+- создать приложение core
+(venv) python manage.py startapp core
+
+- заполнить папку core с файлами и убрать лишнее
+=======================
+└── yatube
+    ├── posts
+    ├── core                  
+    │   ├── context_processors
+    │   │    ├── __init__.py
+    │   │    └── year.py
+	│	├── templatetags
+	│	│   │    ├── __init__.py
+	│	│   │    └── user_filters.py
+    │   ├── templatetags
+    │   ├──  __init__.py
+    │   └──  apps.py
+    ├── templates
+    ├── users   
+    └── manage.py
+=======================
+
+- подключить приложение в сеттингс
+=======================
+INSTALLED_APPS = [
+	.....
+	'core.apps.CoreConfig',
+]
+=======================
+
+
+
+- добавить фильтр
+=======================
+# core/templatetags/user_filters.py
+from django import template
+
+register = template.Library()
+
+
+@register.filter
+def addclass(field, css):
+    return field.as_widget(attrs={'class': css})
+=======================
+
+
+- подключить контекст-процессор в сеттингс
+=======================
+# yatube/settings.py
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [TEMPLATES_DIR],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                # Добавлен контекст-процессор
+                'core.context_processors.year.year',
+            ],
+        },
+    },
+]
+=======================
+
+
+
+- создать приложение about
+(venv) python manage.py startapp about
+
+
+- добавить в головной урлс
+=======================
+urlpatterns = [
+    ...
+    path('about/', include('about.urls', namespace='about')),
+]
+=======================
+
+- добавить урлс приложении about
+=======================
+# файл about/urls.py
+from django.urls import path
+from . import views
+
+
+app_name = 'about'
+
+urlpatterns = [
+    path('author/', views.AboutAuthorView.as_view(), name='author'),
+    path('tech/', views.AboutTechView.as_view(), name='tech'),
+]
+=======================
+
+- добавить в views about
+=======================
+from django.views.generic.base import TemplateView
+
+
+class AboutAuthorView(TemplateView):
+    template_name = 'about/author.html'
+
+
+class AboutTechView(TemplateView):
+    template_name = 'about/tech.html'
+=======================
+
+- добавить шаблоны
+=======================
+<!-- templates/about/author.html -->
+{% extends "base.html" %}
+
+{% block title %}Об авторе проекта{% endblock %}
+
+{% block content %}
+  <div class="container py-5">
+    <h1>Привет, я автор</h1>
+    <p>
+      Тут я размещу информацию о себе, используя свои умения верстать.
+      Картинки, блоки, элементы бустрап. А может быть, просто напишу несколько абзацев текста. 
+    </p>
+  </div>
+{% endblock %}
+=======================
+
+=======================
+<!-- templates/about/tech.html -->
+{% extends "base.html" %}
+
+{% block title %}Технологии{% endblock %}
+
+{% block content %}
+  <div class="container py-5">
+    <div class="row">
+      <h1>Вот что я умею</h1>
+      <aside class="col-12 col-md-3">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            Python
+          </li>
+          <li class="list-group-item">
+            Django
+          </li>
+        </ul>
+      </aside>
+      <article class="col-12 col-md-9">
+        <p>Текст страницы "Технологии"</p>
+      </article>
+    </div>
+  </div>
+{% endblock %}
+=======================
+
+
+- добавить в урлс приложении posts
+=======================
+# posts/urls.py
+urlpatterns = [
+    ...
+    path('profile/<str:username>/', views.profile, name='profile'),
+    path('posts/<int:post_id>/', views.post_detail, name='post_detail'),
+] 
+=======================
+
+
+- добавить шаблоны
+=======================
+<!-- templates/posts/profile.html -->
+{% extends 'base.html' %}
+
+{% block title %}
+  Все посты пользователя {{ author }}
+{% endblock title %}
+
+{% block content %}    
+  <div class="container py-5">     
+    <h1>Все посты пользователя {{ author }}</h1>
+    <h3>Всего постов: {{ post.count }}</h3>   
+    {% for post in page_obj %}
+      <article>
+        <ul>
+          <li>
+            Автор: {{ post.author.get_full_name }}
+          </li>
+          <li>
+            Дата публикации: {{ post.pub_date|date:"d E Y" }} 
+          </li>
+        </ul>
+        <p>
+          {{ post.text|linebreaks }}
+        </p>
+        <a href="{% url 'posts:post_detail' post.pk %}">подробная информация</a>
+      
+        {% if post.group %}     
+          <p><a href="{% url 'posts:group_lists' post.group.slug %}">все записи группы</a></p> 
+        {% endif %}
+      </article>        
+      {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
+	{% include 'posts/includes/paginator.html' %}
+  </div>
+{% endblock %}
+=======================
+
+=======================
+<!-- templates/posts/post_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}
+  {{ post.text|truncatechars:30 }}
+{% endblock %}
+
+{% block content %}
+  <div class="container py-5">   
+    <div class="row">
+      <aside class="col-12 col-md-3">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            Дата публикации: {{ post.pub_date|date:"d E Y" }} 
+          </li>
+          {% if post.group %} 
+            <li class="list-group-item">
+              Группа: {{ post.group }}
+              <a href="{% url 'posts:group_lists' post.group.slug %}">
+                все записи группы
+              </a>
+            </li>
+          {% endif %}
+          <li class="list-group-item">
+            Автор: {{ post.author.get_full_name }}
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            Всего постов автора: {{ post.author.posts.count }} <span ><!-- --></span>
+          </li>
+          <li class="list-group-item">
+            <a href="{% url 'posts:profile' post.author.username %}">
+              все посты пользователя
+            </a>
+          </li>
+        </ul>
+      </aside>
+      <article class="col-12 col-md-9">
+        <p>
+          {{ post.text|linebreaks }}
+        </p>
+      </article>
+    </div> 
+  </div>
+{% endblock content %}
+=======================
+
+=======================
+<!-- templates/posts/includes/paginator.html -->
+{% if page_obj.has_other_pages %}
+  <nav aria-label="Page navigation" class="my-5">
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page=1">Первая</a></li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+            Предыдущая
+          </a>
+        </li>
+      {% endif %}
+      {% for i in page_obj.paginator.page_range %}
+          {% if page_obj.number == i %}
+            <li class="page-item active">
+              <span class="page-link">{{ i }}</span>
+            </li>
+          {% else %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+            </li>
+          {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+            Следующая
+          </a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+            Последняя
+          </a>
+        </li>
+      {% endif %}    
+    </ul>
+  </nav>
+{% endif %}
+=======================
+
+
+- добавить в views приложении posts
+=======================
+from django.core.paginator import Paginator
+....
+def index(request):
+    posts = Post.objects.order_by('-pub_date')
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj
+    }
+
+    return render(request, 'posts/index.html', context)
+
+
+def profile(request, username):
+    template = 'posts/profile.html'
+    author = get_object_or_404(User, username=username,)
+    post = author.posts.all()
+    paginator = Paginator(post, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'author': author,
+        'page_obj': page_obj,
+        'post': post,
+    }
+
+    return render(request, template, context)
+
+
+def post_detail(request, post_id):
+    template = 'posts/post_detail.html'
+    post = get_object_or_404(Post, id=post_id)
+    context = {
+        'post': post,
+    }
+
+    return render(request, template, context)
+=======================
+
+
+- изменить header
+=======================
+<!-- templates/includes/header.html -->
+{% load static %}
+
+<header>
+  <nav class="navbar navbar-expand-lg navbar-light" style="background-color: lightskyblue">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'posts:index' %}">
+        <img src="{% static 'img/logo.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
+        <span style="color:red">Ya</span>tube
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="collapsibleNavbar">
+      <ul class="nav nav-pills">
+        {% with request.resolver_match.view_name as view_name %}
+          <li class="nav-item"> 
+            <a class="nav-link {% if view_name == 'about:author' %}active{% endif %}" href="{% url 'about:author' %}">Об авторе</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if view_name == 'about:tech' %}active{% endif %}" href="{% url 'about:tech' %}">Технологии</a>
+          </li>
+          {% if user.is_authenticated %}
+            <li class="nav-item"> 
+              <a class="nav-link {% if view_name == 'posts:post_create' %}active{% endif %}" href="{% url 'posts:post_create' %}">Новая запись</a>
+            </li>
+            <li class="nav-item"> 
+              <a class="nav-link {% if view_name == 'users:password_change' %}active{% endif %}" href="{% url 'users:password_change' %}">Изменить пароль</a>
+            </li>
+            <li class="nav-item"> 
+              <a class="nav-link {% if view_name == 'users:logout' %}active{% endif %}" href="{% url 'users:logout' %}">Выйти</a>
+            </li>
+            <li>
+              Пользователь: {{ user.username }}
+            </li>
+          {% else %}
+            <li class="nav-item"> 
+              <a class="nav-link {% if view_name == 'users:login' %}active{% endif %}" href="{% url 'users:login' %}">Войти</a>
+            </li>
+            <li class="nav-item"> 
+              <a class="nav-link {% if view_name == 'users:signup' %}active{% endif %}" href="{% url 'users:signup' %}">Регистрация</a>
+            </li>
+          {% endif %}
+        {% endwith %} 
+      </ul>
+      </div>
+    </div>
+  </nav>
+</header>
+=======================
+
+- поправить group_list.html
+=======================
+{% extends 'base.html' %}
+
+{% block title %}
+  Записи сообщества {{ group.title }}
+{% endblock %}
+
+{% block content %}
+  <div class="container py-5">
+    <h1>Записи сообщества {{ group.title }}</h1>
+    {% for post in page_obj %}
+      <article>
+        <ul>
+          <li>
+            Автор: {{ post.author.get_full_name }}
+          </li>
+          <li>
+            Дата публикации: {{ post.pub_date|date:"d E Y" }}
+          </li>
+        </ul>
+        <p>{{ post.text }}</p>
+        {% if not forloop.last %}<hr>{% endif %}
+      </article>
+    {% endfor %}
+    {% include 'posts/includes/paginator.html' %}
+  </div> 
+{% endblock %}
+=======================
+
+- попрравить вью приложении постс
+=======================
+....
+def group_posts(request, slug):
+    group = get_object_or_404(Group, slug=slug)
+    posts = Post.objects.filter(group=group).order_by('-pub_date')
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'group': group,
+        'page_obj': page_obj,
+    }
+
+    return render(request, 'posts/group_list.html', context)
+....
+=======================
+
+
+- добавить create_post.html
+=======================
+{% extends 'base.html' %}
+{% load user_filters %}
+   
+{% block title %}
+  {% if is_edit %}
+    Редактировать пост
+  {% else %}
+    Создать новый пост
+  {% endif %}  
+{% endblock %}
+
+{% block content %} 
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8 p-5">
+        <div class="card">
+          <div class="card-header">
+            {% if is_edit %}
+              Редактировать пост
+            {% else %}
+              Создать новый пост
+            {% endif %} 
+          </div>
+          <div class="card-body">
+            <form method="post" action="
+              {% if is_edit %}
+                {% url 'posts:post_edit' post_id %}
+              {% else %}
+                {% url 'posts:post_create'%}
+              {% endif %}">
+              {% csrf_token %}  
+              {% for field in form %}
+                <div class="form-group row my-3"
+                {% if field.field.required %} 
+                  aria-required="true"
+                {% else %}
+                  aria-required="false"
+                {% endif %}>
+                  <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                    {% if field.field.required %}
+                      <span class="required text-danger">*</span>
+                    {% endif %}
+                  </label>
+                  <div>
+                    {{ field|addclass:'form-control' }}
+                    {% if field.help_text %}
+                      <small id="{{ field.id_for_label }}-help" class="form-text text-muted">
+                        {{ field.help_text|safe }}
+                      </small>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+              <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    {% if is_edit %}
+                    Сохранить
+                    {% else %}
+                    Запостить
+                    {% endif %}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+=======================
+
+
+- добавить урлы приложении постс
+=======================
+urlpatterns = [
+	....
+	path('create/', views.post_create, name='post_create'),
+    path('posts/<int:post_id>/edit/', views.post_edit, name='post_edit'),
+]
+=======================
+
+- добавить вью приложении постс
+=======================
+....
+from django.shortcuts import render, get_object_or_404, redirect
+
+from .forms import PostForm
+....
+@login_required
+def post_create(request):
+    template = 'posts/create_post.html'
+    form = PostForm(request.POST or None)
+    if form.is_valid():
+        post = form.save(commit=False)
+        post.author = request.user
+        post.save()
+        return redirect('posts:profile', request.user)
+
+    return render(request, template, {'form': form})
+
+
+@login_required
+def post_edit(request, post_id):
+    template = 'posts/create_post.html'
+    post = get_object_or_404(Post, pk=post_id)
+    if post.author != request.user:
+        return redirect("posts:post_detail", post_id)
+
+    form = PostForm(request.POST or None, instance=post)
+    if form.is_valid():
+        form.save()
+        return redirect('posts:post_detail', post.id)
+
+    return render(
+        request,
+        template,
+        {'form': form,
+         'is_edit': True,
+         'post_id': post.id,
+         },
+    )
+=======================
+
+- добавить форму приложении постс
+=======================
+# posts/forms.py
+from django.forms import ModelForm
+
+from .models import Post
+
+
+class PostForm(ModelForm):
+    class Meta:
+        model = Post
+        labels = {'group': 'Группа', 'text': 'Сообщение'}
+        fields = ('text', 'group')
+=======================
+
+
+- самостоятельная работа :)
+добавить в шаблоны недостающие ссылки (подробная информация, редактировать, все посты пользователя)
+(примеры можете посмотреть в архиве)
+
+
+- готовим кастомные ошибки (вью и шаблоны, урлы)
+https://github.com/yandex-praktikum/django_custom_handlers_task/tree/main/custom_handlers_task/templates/core
+=======================
+# core/views.py
+from django.shortcuts import render
+
+
+def page_not_found(request, exception):
+    return render(request, 'core/404.html', {'path': request.path}, status=404)
+
+
+def csrf_failure(request, reason=''):
+    return render(request, 'core/403csrf.html')
+
+
+def server_error(request):
+    return render(request, 'core/500.html', status=500)
+
+
+def permission_denied(request, exception):
+    return render(request, 'core/403.html', status=403)
+=======================
+
+=======================
+ yatube
+    ├── posts
+    ├── core                  
+    ├── templates
+	│   ├── about
+	│   ├── core
+	│   │    ├── 403.html
+	│   │    ├── 403csrf.html
+	│   │    ├── 404.html
+	│   │    └── 500.html
+	│   ├── includes
+	│   ├── posts
+	│   ├── users
+	│   └── base.html
+    ├── users   
+    └── manage.py
+=======================
+
+=======================
+# yatube/urls.py
+....
+handler403 = 'core.views.permission_denied'
+handler404 = 'core.views.page_not_found'
+handler500 = 'core.views.server_error'
+....
+=======================
+
+
+- ставим пакеты
+(venv) pip install pillow 
+(venv) pip install sorl-thumbnail 
+
+- добавить в сеттингс
+=======================
+INSTALLED_APPS = [
+    ... 
+    'sorl.thumbnail',
+]
+...
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+=======================
+
+
+- добавить в модель
+=======================
+# posts/models.py
+
+class Post(models.Model):
+	....
+	image = models.ImageField(
+        'Картинка',
+        upload_to='posts/',
+        blank=True
+    )
+=======================
+
+- добавить в форму
+=======================
+# posts/forms.py
+...
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ('group', 'text', 'image') 
+=======================
+
+- добавить в головной урлс
+=======================
+# Эти строки — в начало файла, после импорта других модулей
+from django.conf import settings
+from django.conf.urls.static import static
+...
+
+# Эти строки — в самый конец файла:
+if settings.DEBUG:
+    urlpatterns += static(
+        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
+    )
+=======================
+
+- создать папку media  в папке ятуб
+
+- обновить шаблон
+=======================
+# posts/post_detail.html
+{% load thumbnail %}
+  ...
+<article>
+  <ul>
+    <li>
+      Автор: {{ post.author.get_full_name }} 
+      <a href="{% url 'posts:profile' post.author %}">все посты пользователя</a>
+    </li>
+    <li>
+      Дата публикации: {{ post.pub_date|date:"d E Y" }}
+    </li>
+  </ul>
+  {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+    <img class="card-img my-2" src="{{ im.url }}">
+  {% endthumbnail %}
+  <p>{{ post.text }}</p>
+  <a href="{% url 'posts:post_detail' post.pk %}">подробная информация</a>
+</article>
+...
+=======================
+
+- также добавить в шаблоны index, profile, group_list
+=======================
+{% load thumbnail %}
+....
+{% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+  <img class="card-img my-2" src="{{ im.url }}">
+{% endthumbnail %}
+....
+=======================
+
+- поправить в post_create.html 
+=======================
+<form method="post" enctype="multipart/form-data">
+=======================
+
+- сделать миграцию
+
+- поправить вью приложении постс
+=======================
+form = PostForm(
+        request.POST or None,
+        files=request.FILES or None,     <--- добавилось
+        instance=post
+    )
+=======================
+
+- проверить работоспособность сайта на загрузку картинки и отображения
+
+
+- добавить модель приложении постс
+=======================
+class Comment(models.Model):
+    post = models.ForeignKey(
+        Post,
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='comments',
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Автор комментария',
+    )
+    text = models.TextField(
+        'Текст комментария',
+        help_text='Введите текст комментария',
+    )
+    created = models.DateTimeField(
+        'Дата комментария',
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = ['-created']
+        verbose_name = ('Коммент')
+        verbose_name_plural = ('Комменты')
+
+    def __str__(self):
+        return self.text[:15]
+=======================
+
+
+- добавить урлс
+=======================
+# posts/urls.py
+...
+path('posts/<int:post_id>/comment/', views.add_comment, name='add_comment'),
+...
+=======================
+
+- доработать вью 
+=======================
+# posts/views.py
+....
+def post_detail(request, post_id):
+    template = 'posts/post_detail.html'
+    post = get_object_or_404(Post, id=post_id)
+    form = CommentForm()
+    comments = post.comments.all()
+    context = {
+        'post': post,
+        'form': form,
+        'comments': comments,
+    }
+
+    return render(request, template, context)
+
+
+@login_required
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    form = CommentForm(request.POST or None)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.author = request.user
+        comment.post = post
+        comment.save()
+
+    return redirect('posts:post_detail', post_id=post_id)
+=======================
+
+- добавить форму
+=======================
+# posts/forms.py
+....
+class CommentForm(ModelForm):
+    class Meta:
+        model = Comment
+        fields = ("text",)
+        labels = {'text': 'Текст комментария'}
+        help_texts = {'text': 'Hапишите ваш комментарий'}
+=======================
+
+
+- доработать шаблон
+=======================
+# posts/post_detail.html
+{% load user_filters %}
+
+{% if user.is_authenticated %}
+  <div class="card my-4">
+    <h5 class="card-header">Добавить комментарий:</h5>
+    <div class="card-body">
+      <form method="post" action="{% url 'posts:add_comment' post.id %}">
+        {% csrf_token %}      
+        <div class="form-group mb-2">
+          {{ form.text|addclass:"form-control" }}
+        </div>
+        <button type="submit" class="btn btn-primary">Отправить</button>
+      </form>
+    </div>
+  </div>
+{% endif %}
+
+{% for comment in comments %}
+  <div class="media mb-4">
+    <div class="media-body">
+      <h5 class="mt-0">
+        <a href="{% url 'posts:profile' comment.author.username %}">
+          {{ comment.author.username }}
+        </a>
+      </h5>
+      <p>
+        {{ comment.text }}
+      </p>
+    </div>
+  </div>
+{% endfor %}
+=======================
+
+- пример страницы post_detail с комментами
+https://code.s3.yandex.net/backend-developer/learning-materials/delugov/html-templates6_comment07-22.zip
+
+
+- добавить модель приложении постс
+=======================
+# posts/models.py
+....
+class Follow(models.Model):
+    user = models.ForeignKey(
+        User,
+        related_name='follower',
+        on_delete=models.CASCADE,
+    )
+    author = models.ForeignKey(
+        User,
+        related_name='following',
+        on_delete=models.CASCADE,
+    )
+
+    class Meta:
+        verbose_name = ('Подписка')
+        verbose_name_plural = ('Подписки')
+        constraints = (
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_user_author'
+            ),
+        )
+=======================
+
+
+- поправить вью приложении постс
+=======================
+# posts/views.py
+from .models import Follow, ....
+....
+
+def profile(request, username):
+    template = 'posts/profile.html'
+    author = get_object_or_404(User, username=username,)
+    post = author.posts.all()
+    paginator = Paginator(post, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    following = (
+        request.user.is_authenticated
+        and Follow.objects.filter(
+            user=request.user,
+            author=author
+        ).exists()
+    )
+    context = {
+        'author': author,
+        'page_obj': page_obj,
+        'post': post,
+        'following': following,
+    }
+
+    return render(request, template, context)
+
+
+@login_required
+def follow_index(request):
+    posts = Post.objects.filter(author__following__user=request.user)
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+    }
+
+    return render(request, 'posts/follow.html', context)
+
+
+@login_required
+def profile_follow(request, username):
+    author = get_object_or_404(User, username=username)
+    if author != request.user:
+        Follow.objects.get_or_create(user=request.user, author=author)
+
+    return redirect('posts:follow_index')
+
+
+@login_required
+def profile_unfollow(request, username):
+    author = get_object_or_404(User, username=username)
+    Follow.objects.filter(user=request.user, author=author).delete()
+
+    return redirect('posts:follow_index')
+=======================
+
+
+- добавить урлы
+=======================
+ # posts/urls.py
+urlpatterns = [
+	...
+    path('follow/', views.follow_index, name='follow_index'),    
+    path(
+        'profile/<str:username>/follow/',
+        views.profile_follow, 
+        name='profile_follow'
+    ),
+    path(
+        'profile/<str:username>/unfollow/',
+        views.profile_unfollow,
+        name='profile_unfollow'
+    ),
+]
+=======================
+
+- создать шаблон
+=======================
+<!-- templates/posts/follow.html -->
+{% extends 'base.html' %}
+{% load thumbnail %}
+
+{% block title %}
+Избранные авторы
+{% endblock %}
+
+{% block content %}
+  <div class="container py-5">
+    {% include 'posts/includes/switcher.html' %}
+    {% for post in page_obj %}
+        <ul>
+          <li>
+            Автор: {{ post.author.get_full_name }}
+            <a href="{% url 'posts:profile' post.author %}">все посты пользователя</a>
+          </li>
+          <li>
+            Дата публикации: {{ post.pub_date|date:"d E Y" }}
+          </li>
+        </ul>
+        {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+          <img class="card-img my-2" src="{{ im.url }}">
+        {% endthumbnail %}
+        <p>{{ post.text|linebreaks }}</p>
+        <a href="{% url 'posts:post_detail' post.pk %}">подробная информация</a>
+        {% with request.resolver_match.view_name as view_name %}
+          {% if view_name != 'posts:group_lists' %}
+            {% if post.group %}  
+              <p><a href="{% url 'posts:group_lists' post.group.slug %}">все записи группы</a></p>
+            {% endif %}
+          {% endif %}
+        {% endwith %}
+      {% if not forloop.last %}<hr>{% endif %}
+    {% endfor %}
+    {% include 'posts/includes/paginator.html' %}
+  </div>
+{% endblock %}
+
+=======================
+
+- создать шаблон
+=======================
+<!-- templates/posts/includes/switcher.html -->
+
+{% with request.resolver_match.view_name as view_name %}
+  {% if user.is_authenticated %}
+    <div class="row my-3">
+      <ul class="nav nav-tabs">
+        <li class="nav-item">
+          <a 
+            class="nav-link {% if index %}active{% endif %}"
+            href="{% url 'posts:index' %}"
+          >
+            Все авторы
+          </a>
+        </li>
+        <li class="nav-item">
+          <a 
+            class="nav-link {% if follow %}active{% endif %}"
+            href="{% url 'posts:follow_index' %}"
+          >
+            Избранные авторы
+          </a>
+        </li>
+      </ul>
+    </div>
+  {% endif %}
+{% endwith %}
+=======================
+
+- поправить шаблоны
+=======================
+<!-- templates/posts/index.html -->
+{% extends 'base.html' %}
+{% block title %}Последние обновления на сайте{% endblock %}
+{% block content %}
+  {% include 'posts/includes/switcher.html' %}
+  {% for post in page_obj %}  
+    {% if post.group %}   
+      <a href="{% url 'posts:group_list' post.group.slug %}">
+        все записи группы
+      </a>
+    {% endif %}
+    {% if not forloop.last %}<hr>{% endif %}
+  {% endfor %}
+  {% include 'posts/includes/paginator.html' %}
+{% endblock %}
+
+=======================
+
+=======================
+<!-- templates/posts/index.html -->
+{% extends 'base.html' %}
+{% block title %}Последние обновления на сайте{% endblock %}
+{% block content %}
+  {% include 'posts/includes/switcher.html' %}
+  {% for post in page_obj %}  
+    {% if post.group %}   
+      <a href="{% url 'posts:group_list' post.group.slug %}">
+        все записи группы
+      </a>
+    {% endif %}
+    {% if not forloop.last %}<hr>{% endif %}
+  {% endfor %}
+  {% include 'posts/includes/paginator.html' %}
+{% endblock %}
+=======================
+
+=======================
+<!-- templates/posts/profile.html -->
+
+<div class="mb-5">
+  <h1>Все посты пользователя {{ author.get_full_name }}</h1>
+  <h3>Всего постов: {{ posts_count }}</h3>
+  {% if user.is_authenticated %}
+      {% if author != request.user %}
+        {% if following %}
+          <a
+            class="btn btn-lg btn-light"
+            href="{% url 'posts:profile_unfollow' author.username %}" role="button"
+          >
+            Отписаться
+          </a>
+        {% else %}
+            <a
+              class="btn btn-lg btn-primary"
+              href="{% url 'posts:profile_follow' author.username %}" role="button"
+            >
+              Подписаться
+            </a>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+</div>
+
+=======================
+
+
+
+****************************
+		ПОЗДРАВЛЯЮ! 
+	  ВЫ СОБРАЛИ САЙТ!
+****************************
+
+
+
+
+можете сравнить свой проект с проектом составителя шпаргалки
+https://github.com/lepag-jun/hw_test
