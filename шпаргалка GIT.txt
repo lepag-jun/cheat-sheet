@@ -1,0 +1,53 @@
+
+Полезные git - команды 
+
+
+
+
+- задать имя и имейл репозиториям
+git config --global user.name "ИМЯ"
+git config --global user.email "ИМЕЙЛ"
+
+
+- инициализация git 
+git init
+
+- добавить все файлы в коммит
+git add .
+
+- клонирование репозиториям
+git clone <репозиторие>
+
+- добавить коммент в коммит
+git commit -m "коммент"
+
+- просмотр изменений до коммита
+git diff
+
+- откат последнего коммита
+git revert HEAD
+
+- создать и перейти в новую ветку
+git checkout -b <branch-name>
+
+- создать новую ветку
+git branch <new_branch_name>
+
+- показ списка веток
+git branch
+
+- удалить ветку (после слияния!)
+git branch -d <existing_branch_name>
+
+- слияние веток
+git merge <existing_branch_name>
+
+- отправить изменения в гитхаб
+git push
+
+- получить изменения из гитхаба
+git pull
+
+- отправка новой ветки
+git push -u origin <new_branch>
+
